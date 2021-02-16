@@ -3,8 +3,6 @@ using UnityEngine.Tilemaps;
 
 public class GenarateTileMap : MonoBehaviour
 {
-    // Start is called before the first frame update
-
     public string MapName;
 
     private Tile[] tiles;
@@ -12,23 +10,23 @@ public class GenarateTileMap : MonoBehaviour
     private Tilemap RealTileMap;
     private Tilemap VirtualMap;
 
-    private string[] SpriteToDescription = new string[8] {"left", "center", "right", "single", "otherup", "up", "otherdown", "down" };
+    private string[] SpriteToDescription = new string[8] {"left", "center", "right", "single", "belowup", "up", "belowdown", "down" };
     void Start()
     {
         RealTileMap =  transform.GetChild(0).GetComponent<Tilemap>();
         VirtualMap = transform.GetChild(1).GetComponent<Tilemap>();
 
         ReadTiles();
-        GenerateMap(RealTileMap, Color.black);
+        GenerateMap(RealTileMap, Color.black, VirtualMap, Color.white);
     }
 
-    private void GenerateMap(Tilemap map, Color color) {
+    private void GenerateMap(Tilemap RealMap, Color RealGroundColor, Tilemap VirtualMap, Color VirtualGroundColor) {
         // readmap from resource
         Texture2D level = Resources.Load<Texture2D>("Maps/Map 1/Levels/" + MapName);
         if (level == null) {
             Debug.LogError("Can't load map image from path \"Maps/Map 1/Levels/\"" + MapName);
+            return;
         }
-
         // create array 2D of directionController type.
         directionController[,] ground = new directionController[level.width + 2, level.height + 2];
         for (int x = 0; x < level.width + 2; x++)
@@ -41,56 +39,60 @@ public class GenarateTileMap : MonoBehaviour
         // set 1 to value of directionController when capture dark pixel in level picture.
         for (int x = 0; x < level.width; x++) {
             for (int y = 0; y < level.height; y++) {
-                if (level.GetPixel(x, y) == color)
+                if (level.GetPixel(x, y) == RealGroundColor)
                 {
                     ground[x + 1, y + 1].value = 1;
                 }
+                else if (level.GetPixel(x, y) == VirtualGroundColor) {
+                    ground[x + 1, y + 1].value = -1;
+                    Debug.Log("asdf");
+                }
             }
         }
-        CaculateLocationSprites(ground, level.width, level.height);
+        CaculateLocationSprites(ground, level.width + 2, level.height + 2);
         // generate map by array 2 dimension map above.
-        GenerateTiles(ground, level.width, level.height, tiles, map);
+        GenerateTiles(ground, level.width + 2, level.height + 2, tiles, RealMap, VirtualMap);
     }
 
     private void CaculateLocationSprites(directionController[,] ground, int width, int height) {
         for (int x = 1; x < width - 1; x++) {
             for (int y = 1; y < height - 1; y++) {
                 if (ground[x, y].value == 0) continue;
-                if (ground[x + 1, y - 1].value == 1) {
+                if (Mathf.Abs(ground[x + 1, y - 1].value) == 1) {
                     ground[x, y].rightbottom = true;
                 }
-                if (ground[x, y - 1].value == 1) {
+                if (Mathf.Abs(ground[x, y - 1].value) == 1) {
                     ground[x, y].bottom = true;
                 }
-                if (ground[x - 1, y - 1].value == 1) {
+                if (Mathf.Abs(ground[x - 1, y - 1].value) == 1) {
                     ground[x, y].leftbottom = true;
                 }
-                if (ground[x - 1, y].value == 1) {
+                if (Mathf.Abs(ground[x - 1, y].value) == 1) {
                     ground[x, y].left = true;
                 }
-                if (ground[x + 1, y].value == 1) {
+                if (Mathf.Abs(ground[x + 1, y].value) == 1) {
                     ground[x, y].right = true;
                 }
-                if (ground[x - 1, y + 1].value == 1) {
+                if (Mathf.Abs(ground[x - 1, y + 1].value) == 1) {
                     ground[x, y].lefttop = true;  
                 }
-                if (ground[x, y + 1].value == 1) {
+                if (Mathf.Abs(ground[x, y + 1].value) == 1) {
                     ground[x, y].top = true;
                 }
-                if (ground[x + 1, y + 1].value == 1) {
+                if (Mathf.Abs(ground[x + 1, y + 1].value) == 1) {
                     ground[x, y].righttop = true;
                 }
             } 
         }
     }
-    private void GenerateTiles(directionController[,] ground, int width, int height, Tile[] tiles, Tilemap map)
+    private void GenerateTiles(directionController[,] ground, int width, int height, Tile[] tiles, Tilemap RealMap, Tilemap VirtualMap)
     {
         int FindSpriteIndex;
         for (int x = 1; x < width - 1; x++)
         {
             for (int y = 1; y < height - 1; y++)
             {
-                if (ground[x, y].value == 1)
+                if (ground[x, y].value != 0)
                 {
                     ground[x, y].caculateLocation();
                     FindSpriteIndex = Des2Index(ground[x, y].description, SpriteToDescription);
@@ -98,7 +100,46 @@ public class GenarateTileMap : MonoBehaviour
                         Debug.LogError("something wrong when match description to sprite");
                         continue;
                     }
-                    map.SetTile(new Vector3Int(x - 1, y - 1, 0), tiles[FindSpriteIndex]);
+                    if (ground[x, y].value == 1)
+                    {
+                        RealMap.SetTile(new Vector3Int(x - 1, y - 1, 0), tiles[FindSpriteIndex]);
+                    }
+                    else {
+                        VirtualMap.SetTile(new Vector3Int(x - 1, y - 1, 0), tiles[FindSpriteIndex]);
+                    }
+                    if (ground[x, y].description == "up")
+                    {
+                        FindSpriteIndex = Des2Index("belowup", SpriteToDescription);
+                        if (FindSpriteIndex == -1)
+                        {
+                            Debug.LogError("something wrong when match description to sprite");
+                            continue;
+                        }
+                        if (ground[x, y].value == 1)
+                        {
+                            RealMap.SetTile(new Vector3Int(x - 1, y - 2, 0), tiles[FindSpriteIndex]);
+                        }
+                        else
+                        {
+                            VirtualMap.SetTile(new Vector3Int(x - 1, y - 2, 0), tiles[FindSpriteIndex]);
+                        }
+                    }
+                    else if (ground[x, y].description == "down") {
+                        FindSpriteIndex = Des2Index("belowdown", SpriteToDescription);
+                        if (FindSpriteIndex == -1)
+                        {
+                            Debug.LogError("something wrong when match description to sprite");
+                            continue;
+                        }
+                        if (ground[x, y].value == 1)
+                        {
+                            RealMap.SetTile(new Vector3Int(x - 1, y - 2, 0), tiles[FindSpriteIndex]);
+                        }
+                        else
+                        {
+                            VirtualMap.SetTile(new Vector3Int(x - 1, y - 2, 0), tiles[FindSpriteIndex]);
+                        }
+                    }
                 }
             }
         }
@@ -135,9 +176,16 @@ public class GenarateTileMap : MonoBehaviour
             {
                 description = "single";
             }
-            else if (left == true && right == true)
-            {
+            else if ((left == true && right == true) || (left == true && righttop == true) || (right == true && lefttop == true)) { 
                 description = "center";
+            }
+            else if (leftbottom == true)
+            {
+                description = "up";
+            }
+            else if (rightbottom == true)
+            {
+                description = "down";
             }
             else if (right == true && left == false)
             {
@@ -147,13 +195,8 @@ public class GenarateTileMap : MonoBehaviour
             {
                 description = "right";
             }
-            else if (leftbottom == true)
-            {
-                description = "up";
-            }
-            else if (lefttop == true)
-            {
-                description = "down";
+            else {
+                description = "center";
             }
         }
         public void clear()
