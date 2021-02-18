@@ -19,9 +19,13 @@ public class MovementController : MonoBehaviour {
     // animation controller
     private Animator anim;
 
+    // use when player is going in slopping way
+    public BoxCollider2D front;
+    public int Climbing = 0;
+    public float smoothClimbing = 0.5f;
+
     //get some component
     private void Start() {
-        transform.position = new Vector3Int(0, 0, 0);
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
     }
@@ -30,12 +34,11 @@ public class MovementController : MonoBehaviour {
         h = CrossPlatformInputManager.GetAxisRaw("Horizontal");
         //get vertical axis
         v = CrossPlatformInputManager.GetAxisRaw("Vertical");
-
         if (h < 0f && right) Flip();
         if (h > 0f && !right) Flip();
     }
     private void FixedUpdate() {
-        transform.position += new Vector3(h, 0, 0) * Time.fixedDeltaTime * Speed;
+        transform.position += new Vector3(h, Climbing * smoothClimbing, 0) * Time.fixedDeltaTime * Speed;
         anim.SetFloat("Speed", Mathf.Abs(h));
 
         if (Mathf.Abs(rb.velocity.y) < 0.001f) {

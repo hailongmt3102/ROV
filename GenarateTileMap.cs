@@ -18,6 +18,9 @@ public class GenarateTileMap : MonoBehaviour
 
         ReadTiles();
         GenerateMap(RealTileMap, Color.black, VirtualMap, Color.white);
+
+        // to change color of each cell when player move, we must set flag of cell in virtual ground
+        SetTileFlagToAllVirtualMap();
     }
 
     private void GenerateMap(Tilemap RealMap, Color RealGroundColor, Tilemap VirtualMap, Color VirtualGroundColor) {
@@ -45,7 +48,6 @@ public class GenarateTileMap : MonoBehaviour
                 }
                 else if (level.GetPixel(x, y) == VirtualGroundColor) {
                     ground[x + 1, y + 1].value = -1;
-                    Debug.Log("asdf");
                 }
             }
         }
@@ -211,5 +213,20 @@ public class GenarateTileMap : MonoBehaviour
             if (Sprite2Des[i] == des) return i;
         }
         return -1;
+    }
+    private void SetTileFlagToAllVirtualMap()
+    {
+        Vector3Int postion = Vector3Int.zero;
+        for (int x = 0; x < VirtualMap.size.x; x++)
+        {
+            for (int y = 0; y < VirtualMap.size.y; y++)
+            {
+                postion.Set(x, y, 0);
+                if (VirtualMap.HasTile(postion))
+                {
+                    VirtualMap.SetTileFlags(postion, TileFlags.None);
+                }
+            }
+        }
     }
 }
