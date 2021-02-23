@@ -15,13 +15,13 @@ public class ChangeOpacity : MonoBehaviour
     // when player is moving near by virtual ground. It will change its color.
     private Tilemap VirtualMap;
     
-    // player postion and player cell postion
-    private Vector3 PlayerPostion;
+    // player Position and player cell Position
+    private Vector3 PlayerPosition;
     private Vector3Int PlayerCell;
     private Vector3Int NewPlayerCell;
 
-    // current postion, use in loop
-    private  Vector3Int CurrentPostion = Vector3Int.zero;
+    // current Position, use in loop
+    private  Vector3Int CurrentPosition = Vector3Int.zero;
     private void Start()
     {
         VirtualMap = GetComponent<Tilemap>();
@@ -31,11 +31,11 @@ public class ChangeOpacity : MonoBehaviour
 
     void FixedUpdate()
     {
-        // get player postion
-        PlayerPostion = Player.position;
-        // get cell postion of player.
-        NewPlayerCell = VirtualMap.LocalToCell(PlayerPostion);
-        // when new postion is changed, set some tile with default color.
+        // get player Position
+        PlayerPosition = Player.position;
+        // get cell Position of player.
+        NewPlayerCell = VirtualMap.LocalToCell(PlayerPosition);
+        // when new Position is changed, set some tile with default color.
         if (NewPlayerCell != PlayerCell)
         {
             excuteWhenChangePos(PlayerCell, NewPlayerCell, Range);
@@ -51,11 +51,11 @@ public class ChangeOpacity : MonoBehaviour
                 // check xy coordinate is correct.
                 if (x >= 0 && x < VirtualMap.size.x && y >= 0 && y < VirtualMap.size.y)
                 {
-                    CurrentPostion.Set(x, y, 0);
+                    CurrentPosition.Set(x, y, 0);
                     // if xy coordinate has tile in virtual ground.
-                    if (VirtualMap.HasTile(CurrentPostion))
+                    if (VirtualMap.HasTile(CurrentPosition))
                     {
-                        VirtualMap.SetColor(CurrentPostion, ColorChanging);
+                        VirtualMap.SetColor(CurrentPosition, ColorChanging);
                     }
                 }
             }
@@ -75,9 +75,9 @@ public class ChangeOpacity : MonoBehaviour
         }
         for (int x = fromx; x <= tox; x++) {
             for (int y = fromy; y <= toy; y++) { 
-                CurrentPostion.Set(x, y, 0);
-                if (VirtualMap.HasTile(CurrentPostion)) {
-                    VirtualMap.SetColor(CurrentPostion, Color.white);
+                CurrentPosition.Set(x, y, 0);
+                if (VirtualMap.HasTile(CurrentPosition)) {
+                    VirtualMap.SetColor(CurrentPosition, Color.white);
                 }
             }
         }

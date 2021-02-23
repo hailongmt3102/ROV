@@ -3,31 +3,66 @@ using UnityEngine.Tilemaps;
 
 public class GenarateTileMap : MonoBehaviour
 {
-    public string MapName;
+    // map group path and map name path store in the resource.
+    public string MapGroup  = "Map 1";
+    public string MapName   = "lv1";
 
-    private Tile[] tiles;
+    // Some color to mapping in the map picture.
+    public Color colorToRealGround          = Color.black;
+    public Color colorToVirtualGround       = Color.white;
 
+    // define some kind to mapping color with start point, save point, endpoint
+    public ColorToPrefabs ColorToStart      = new ColorToPrefabs(Color.red);
+    public ColorToPrefabs ColorToSave       = new ColorToPrefabs(Color.blue);
+    public ColorToPrefabs ColorToEnd        = new ColorToPrefabs(Color.green);
+
+    // COin prefabs
+    public GameObject Coin;
+
+    // store all tile from source
+    private Tile[] tilemaps;
+
+    // virtual tilemap and real tilemap
+    // In the virtual tilemap, the player can't stand on
+    // Otherwise, the player can move In the real tilemap
     private Tilemap RealTileMap;
     private Tilemap VirtualMap;
 
-    private string[] SpriteToDescription = new string[8] {"left", "center", "right", "single", "belowup", "up", "belowdown", "down" };
+    //get position of the player in this level.
+    private Vector3 playerPosition = Vector3.zero;
+
+    private string[] SpriteToDescription = new string[8] { "left", "center", "right", "single", "belowup", "up", "belowdown", "down" };
+
+    // number of coin in this level.
+    private int CoinNumber;
+
     void Start()
     {
-        RealTileMap =  transform.GetChild(0).GetComponent<Tilemap>();
+        RealTileMap = transform.GetChild(0).GetComponent<Tilemap>();
         VirtualMap = transform.GetChild(1).GetComponent<Tilemap>();
-
         ReadTiles();
-        GenerateMap(RealTileMap, Color.black, VirtualMap, Color.white);
-
-        // to change color of each cell when player move, we must set flag of cell in virtual ground
+        GenerateMap(RealTileMap, colorToRealGround, VirtualMap, colorToVirtualGround);
+        // to change the color of each cell when the player moves, we must set a flag of the cell on a virtual ground
         SetTileFlagToAllVirtualMap();
+        // after generate the map, set player position.
+        playerPosition.x += 0.5f;
+        playerPosition.y += 2;
+        GameObject.Find("Player").gameObject.transform.position = playerPosition;
     }
-
+    // This function will read all tiles map from the source.
+    private void ReadTiles()
+    {
+        tilemaps = Resources.LoadAll<Tile>("Maps/"+ MapGroup +"/Tile Palates/Tiles");
+        if (tilemaps.Length == 0)
+        {
+            Debug.LogError("Can't load tiles from path \"Maps/Map1/Tile Palates/Tiles\"");
+        }
+    }
     private void GenerateMap(Tilemap RealMap, Color RealGroundColor, Tilemap VirtualMap, Color VirtualGroundColor) {
-        // readmap from resource
-        Texture2D level = Resources.Load<Texture2D>("Maps/Map 1/Levels/" + MapName);
+        // read the map from the source
+        Texture2D level = Resources.Load<Texture2D>("Maps/" + MapGroup + "/Levels/" + MapName);
         if (level == null) {
-            Debug.LogError("Can't load map image from path \"Maps/Map 1/Levels/\"" + MapName);
+            Debug.LogError("Can't load map image from path \"Maps/" + MapGroup + "/Levels/\"" + MapName);
             return;
         }
         // create array 2D of directionController type.
@@ -39,7 +74,7 @@ public class GenarateTileMap : MonoBehaviour
                 ground[x, y] = new directionController();
             }
         }
-        // set 1 to value of directionController when capture dark pixel in level picture.
+        // set 1 to the value of directionController when capturing black and white pixel in the level picture.
         for (int x = 0; x < level.width; x++) {
             for (int y = 0; y < level.height; y++) {
                 if (level.GetPixel(x, y) == RealGroundColor)
@@ -53,9 +88,12 @@ public class GenarateTileMap : MonoBehaviour
         }
         CaculateLocationSprites(ground, level.width + 2, level.height + 2);
         // generate map by array 2 dimension map above.
-        GenerateTiles(ground, level.width + 2, level.height + 2, tiles, RealMap, VirtualMap);
+        GenerateTiles(ground, level.width + 2, level.height + 2, tilemaps, RealMap, VirtualMap);
+        // create start point, save point, an endpoint in the tilemap.
+        GeneratePoint(level, ColorToStart, ColorToSave, ColorToEnd);
+        // generate coin in game
+        CoinNumber = GenerateCoin(level, Coin);
     }
-
     private void CaculateLocationSprites(directionController[,] ground, int width, int height) {
         for (int x = 1; x < width - 1; x++) {
             for (int y = 1; y < height - 1; y++) {
@@ -76,7 +114,7 @@ public class GenarateTileMap : MonoBehaviour
                     ground[x, y].right = true;
                 }
                 if (Mathf.Abs(ground[x - 1, y + 1].value) == 1) {
-                    ground[x, y].lefttop = true;  
+                    ground[x, y].lefttop = true;
                 }
                 if (Mathf.Abs(ground[x, y + 1].value) == 1) {
                     ground[x, y].top = true;
@@ -84,7 +122,7 @@ public class GenarateTileMap : MonoBehaviour
                 if (Mathf.Abs(ground[x + 1, y + 1].value) == 1) {
                     ground[x, y].righttop = true;
                 }
-            } 
+            }
         }
     }
     private void GenerateTiles(directionController[,] ground, int width, int height, Tile[] tiles, Tilemap RealMap, Tilemap VirtualMap)
@@ -146,10 +184,178 @@ public class GenarateTileMap : MonoBehaviour
             }
         }
     }
-    private void ReadTiles() {
-        tiles = Resources.LoadAll<Tile>("Maps/Map 1/Tile Palates/Tiles");
-        if (tiles.Length == 0) {
-            Debug.LogError("Can't load tiles from path \"Maps/Map1/Tile Palates/Tiles\"");
+    private void GeneratePoint(Texture2D level, ColorToPrefabs start, ColorToPrefabs save, ColorToPrefabs end) {
+        Color current;
+        Vector3 position = Vector3.zero;
+        for (int x = 0; x < level.width; x++) {
+            for (int y = 0; y < level.height; y++) {
+                current = level.GetPixel(x, y);
+                position.Set(x, y, 0);
+                if (current == start.color)
+                {
+                    Instantiate(start.prefab, position, Quaternion.identity);
+                    playerPosition = position;
+                }
+                else if (current == save.color) {
+                    Instantiate(save.prefab, position, Quaternion.identity);
+                }
+                else if (current == end.color)
+                {
+                    Instantiate(end.prefab, position, Quaternion.identity);
+                }
+            }
+        }
+    }
+    private int GenerateCoin(Texture2D level, GameObject Coin)
+    {
+        int CoinNumber = 0;
+        int shape = 0;
+        // order mapping shape:
+        // squares, triangle, axis, single
+        bool[] ShapeChecking = new bool[4];
+        // Coin Number
+        int[] coins = new int[4];
+        coins[0] = 4; coins[1] = 3; coins[2] = 3; coins[3] = 1;
+        // Shape description
+        string[] shapes = {"squares", "triange", "axis", "single" };
+
+        int x = 3, y;
+        Vector3 position = Vector3.zero;
+        while (x < level.width - 1)
+        {
+            y = 0;
+            while (y < level.height - 3)
+            {
+                if (level.GetPixel(x, y) != Color.clear)
+                {
+                    // if all element is false , continue
+                    // otherwise, 50% will generate.
+                    if (checkAreaForShape(level, x, y, ref ShapeChecking) && Random.Range(0,2) == 0) {
+                        //else
+                        do
+                        {
+                            //  random from 0 to 3
+                            shape = Random.Range(0, 4);
+                        }
+                        while (!ShapeChecking[shape]);
+                        //// generate coin shape
+                        position.Set(x, y + 1, 0);
+                        CoinShape(position, Coin, shapes[shape]);
+                        CoinNumber += coins[shape];
+                        if (shape == 4 || shape == 3)
+                        {
+                            x += 1;
+                        }
+                        else
+                        {
+                            x += 2;
+                        }
+                    }
+                }
+                y += 1;
+            }
+            x += 1;
+        }
+        return CoinNumber;
+    }
+
+    private bool checkAreaForShape(Texture2D level, int x, int y, ref bool[] ShapeChecking)
+    {
+        if (level.GetPixel(x, y + 1) != Color.clear || level.GetPixel(x, y + 2) != Color.clear || level.GetPixel(x + 1, y + 1) != Color.clear || level.GetPixel(x + 1, y + 2) != Color.clear)
+        {
+            ShapeChecking[0] = false; //  Check Squares.
+            ShapeChecking[1] = false; // Check triangle
+        }
+        else
+        {
+            ShapeChecking[0] = true;
+            ShapeChecking[1] = true;
+        }
+
+        // check for axis shape
+        if (level.GetPixel(x, y + 1) != Color.clear || level.GetPixel(x, y + 2) != Color.clear || level.GetPixel(x, y + 2) != Color.clear)
+        {
+            ShapeChecking[2] = false; // check axis
+        }
+        else
+        {
+            ShapeChecking[2] = true;
+        }
+
+        // check for single
+        if (level.GetPixel(x, y + 1) != Color.clear)
+        {
+            ShapeChecking[3] = false;
+        }
+        else
+        {
+            ShapeChecking[3] = true;
+        }
+        // check if all element is false, return false. Otherwise, return true
+        for (int i = 0; i < ShapeChecking.Length; i++)
+        {
+            if (ShapeChecking[i] == true) return true;
+        }
+        return false;
+    }
+
+    private int CoinShape(Vector3 position, GameObject Coin, string shape)
+    {
+        if (shape == "squares")
+        {
+            Instantiate(Coin, position, Quaternion.identity);
+            position.x += 1;
+            Instantiate(Coin, position, Quaternion.identity);
+            position.y += 1;
+            Instantiate(Coin, position, Quaternion.identity);
+            position.x -= 1;
+            Instantiate(Coin, position, Quaternion.identity);
+            return 4;
+        }
+        else if (shape == "triangle")
+        {
+            Instantiate(Coin, position, Quaternion.identity);
+            position.x += 1;
+            Instantiate(Coin, position, Quaternion.identity);
+            position.x -= 0.5f;
+            position.y += 1;
+            Instantiate(Coin, position, Quaternion.identity);
+        }
+        else if (shape == "axis")
+        {
+            Instantiate(Coin, position, Quaternion.identity);
+            position.y += 1;
+            Instantiate(Coin, position, Quaternion.identity);
+            position.y += 1;
+            Instantiate(Coin, position, Quaternion.identity);
+        }
+        else
+        {
+            Instantiate(Coin, position, Quaternion.identity);
+        }
+        return 0;
+    }
+    private int Des2Index(string des, string[] Sprite2Des)
+    {
+        for (int i = 0; i < Sprite2Des.Length; i++)
+        {
+            if (Sprite2Des[i] == des) return i;
+        }
+        return -1;
+    }
+    private void SetTileFlagToAllVirtualMap()
+    {
+        Vector3Int position = Vector3Int.zero;
+        for (int x = 0; x < VirtualMap.size.x; x++)
+        {
+            for (int y = 0; y < VirtualMap.size.y; y++)
+            {
+                position.Set(x, y, 0);
+                if (VirtualMap.HasTile(position))
+                {
+                    VirtualMap.SetTileFlags(position, TileFlags.None);
+                }
+            }
         }
     }
     class directionController
@@ -208,25 +414,14 @@ public class GenarateTileMap : MonoBehaviour
         }
     }
 
-    private int Des2Index(string des, string[] Sprite2Des) {
-        for (int i = 0; i < Sprite2Des.Length; i++) {
-            if (Sprite2Des[i] == des) return i;
-        }
-        return -1;
-    }
-    private void SetTileFlagToAllVirtualMap()
-    {
-        Vector3Int postion = Vector3Int.zero;
-        for (int x = 0; x < VirtualMap.size.x; x++)
-        {
-            for (int y = 0; y < VirtualMap.size.y; y++)
-            {
-                postion.Set(x, y, 0);
-                if (VirtualMap.HasTile(postion))
-                {
-                    VirtualMap.SetTileFlags(postion, TileFlags.None);
-                }
-            }
+    // declaration of the class mapping Color and prefab
+    [System.Serializable]
+    public class ColorToPrefabs {
+        public Color color;
+        public GameObject prefab;
+
+        public ColorToPrefabs(Color color) {
+            this.color = color;
         }
     }
 }

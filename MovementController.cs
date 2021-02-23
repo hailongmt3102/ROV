@@ -7,8 +7,11 @@ public class MovementController : MonoBehaviour {
     private float h,v;
     private Rigidbody2D rb;
 
-    //use to rotation
+    // use to rotation
     private bool right = true;
+
+    // moving player information 
+    private MovingInformation movingInfor;
 
     //use to move and jump 
     private bool isJumping = false;
@@ -20,17 +23,18 @@ public class MovementController : MonoBehaviour {
     private Animator anim;
 
     // use when player is going in slopping way
-    public BoxCollider2D front;
     public int Climbing = 0;
-    public float smoothClimbing = 0.5f;
+    [Range(0.5f, 0.8f)]
+    public float smoothClimbing = 0.6f;
 
-    //get some component
     private void Start() {
+        //get some component
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        movingInfor = new MovingInformation(transform.position);
     }
     private void Update() {
-        //get horizontal axis
+        // get horizontal axis
         h = CrossPlatformInputManager.GetAxisRaw("Horizontal");
         //get vertical axis
         v = CrossPlatformInputManager.GetAxisRaw("Vertical");

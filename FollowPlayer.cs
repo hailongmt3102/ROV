@@ -2,7 +2,7 @@
 
 public class FollowPlayer : MonoBehaviour
 {
-    // camera follows with player 
+    // camera follows player
     public Transform Player;
     public float SmoothSpeed = 0.125f;
     public Vector3 Offset;
