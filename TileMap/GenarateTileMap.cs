@@ -19,6 +19,9 @@ public class GenarateTileMap : MonoBehaviour
     // COin prefabs
     public GameObject Coin;
 
+    // number of coin in this level.
+    public int CoinNumber;
+
     // store all tile from source
     private Tile[] tilemaps;
 
@@ -33,10 +36,7 @@ public class GenarateTileMap : MonoBehaviour
 
     private string[] SpriteToDescription = new string[8] { "left", "center", "right", "single", "belowup", "up", "belowdown", "down" };
 
-    // number of coin in this level.
-    private int CoinNumber;
-
-    void Start()
+    void Awake()
     {
         RealTileMap = transform.GetChild(0).GetComponent<Tilemap>();
         VirtualMap = transform.GetChild(1).GetComponent<Tilemap>();
@@ -217,7 +217,7 @@ public class GenarateTileMap : MonoBehaviour
         int[] coins = new int[4];
         coins[0] = 4; coins[1] = 3; coins[2] = 3; coins[3] = 1;
         // Shape description
-        string[] shapes = {"squares", "triange", "axis", "single" };
+        string[] shapes = {"squares", "triangle", "axis", "single" };
 
         int x = 3, y;
         Vector3 position = Vector3.zero;
@@ -301,6 +301,9 @@ public class GenarateTileMap : MonoBehaviour
 
     private int CoinShape(Vector3 position, GameObject Coin, string shape)
     {
+        // ofset because pivot is center of the gameobject
+        position.x += 0.5f;
+        position.y += 0.5f;
         if (shape == "squares")
         {
             Instantiate(Coin, position, Quaternion.identity);
