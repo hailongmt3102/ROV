@@ -4,8 +4,8 @@ using UnityStandardAssets.CrossPlatformInput;
 
 public class MovementController : MonoBehaviour {
 
-    public int Speed = 10;
-    public int JumpForce = 18;
+    public int Speed = 7;
+    public int JumpForce = 16;
     // use when player is going in slopping way
     public LayerMask whatIsGround;
     public Transform SlopePointCheck;

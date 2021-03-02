@@ -4,8 +4,8 @@ using UnityEngine.Tilemaps;
 public class GenarateTileMap : MonoBehaviour
 {
     // map group path and map name path store in the resource.
-    public string MapGroup  = "Map 1";
-    public string MapName   = "lv1";
+    public string MapGroup  = "";
+    public string MapName   = "";
 
     // Some color to mapping in the map picture.
     public Color colorToRealGround          = Color.black;
@@ -38,6 +38,14 @@ public class GenarateTileMap : MonoBehaviour
 
     void Awake()
     {
+        // get map group and map name
+        MapGroup = PlayerPrefs.GetString("MapGroup");
+        MapName = PlayerPrefs.GetString("Level");
+
+        if (MapGroup == "" || MapName == "") {
+            Debug.LogError("Some thing error when get the name of map");
+            return;
+        }
         RealTileMap = transform.GetChild(0).GetComponent<Tilemap>();
         VirtualMap = transform.GetChild(1).GetComponent<Tilemap>();
         ReadTiles();
