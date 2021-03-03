@@ -25,6 +25,7 @@ public class MapController : MonoBehaviour
         }
         // Load data
         List<SaveLevelInfo> data = LoadData(len, levels);
+
         for (int i = 0; i < len; i++) {
             GameObject level = Instantiate(LevelButton, Vector3.zero, Quaternion.identity);
             level.transform.SetParent(transform);
@@ -47,7 +48,7 @@ public class MapController : MonoBehaviour
         }
     }
     private List<SaveLevelInfo> LoadData(int length, Texture2D[] levels) {
-        string filePath = Application.persistentDataPath + "LevelInfomations";
+        string filePath = Application.persistentDataPath + gameObject.name + "LevelInfomations";
 
         if (File.Exists(filePath))
         {

@@ -15,7 +15,6 @@ public class WinController : MonoBehaviour
         }
         gameObject.SetActive(true);
         // play animation
-        Debug.Log("LvComplete" + Star.ToString() + "S");
         anim.Play("LvComplete" + Star.ToString() + "S");
     }
     public void BackToHome() { 
