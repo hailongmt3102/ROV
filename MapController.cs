@@ -1,15 +1,19 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Collections.Generic;
+using System;
 
 public class MapController : MonoBehaviour
 {
     public GameObject LevelButton;
-    public void LoadGame(string map, string level) {
+    public void LoadGame(string map, string level, bool locked) {
+        if (locked)
+        {
+            return;
+        }
         PlayerPrefs.SetString("MapGroup", map);
         PlayerPrefs.SetString("Level", level);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
@@ -25,15 +29,16 @@ public class MapController : MonoBehaviour
         }
         // Load data
         List<SaveLevelInfo> data = LoadData(len, levels);
-
         for (int i = 0; i < len; i++) {
             GameObject level = Instantiate(LevelButton, Vector3.zero, Quaternion.identity);
             level.transform.SetParent(transform);
             level.name = levels[i].name;
             // add event listener when clicked
-            level.GetComponent<Button>().onClick.AddListener(delegate { LoadGame(this.name, level.name); });
+            bool locked = new bool(); locked =  data[i].locked;
+            level.GetComponent<Button>().onClick.AddListener(delegate { LoadGame(this.name, level.name, locked); });
             Image[] child = level.GetComponentsInChildren<Image>();
 
+            level.GetComponentInChildren<Text>().text = (i + 1).ToString();
             // child 1,2,3 = star 1,2,3 image and  child 4 = locked image
             for (int j = 6; j > data[i].star + 3; j--) {
                 child[j].gameObject.SetActive(false);
@@ -49,7 +54,6 @@ public class MapController : MonoBehaviour
     }
     private List<SaveLevelInfo> LoadData(int length, Texture2D[] levels) {
         string filePath = Application.persistentDataPath + gameObject.name + "LevelInfomations";
-
         if (File.Exists(filePath))
         {
             BinaryFormatter bf = new BinaryFormatter();
@@ -135,20 +139,23 @@ public class MapController : MonoBehaviour
             return data;
         }
     }
-
-    // this class stores data at each level.
     [Serializable]
-    public class SaveLevelInfo {
+    // this class stores data at each level.
+    public class SaveLevelInfo
+    {
         public string name;
         public bool locked;
         // star from 1 to 3
         [Range(0, 4)]
         public int star;
 
-        public SaveLevelInfo() {
+        public SaveLevelInfo()
+        {
             name = "";
             locked = true;
             star = 0;
         }
     }
 }
+
+
