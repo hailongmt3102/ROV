@@ -9,13 +9,18 @@ public class MenuStateController : MonoBehaviour
     static private List<string> state = new List<string>();
     private void Start()
     {
+        // when load scene from playing scene
+        if (PlayerPrefs.GetInt("played") == 1 && state.Count != 0)
+        {
+            state.Add("abc");
+            previousState();
+            return;
+        }
+        // load menu in the first times
         foreach (EventForButtonState b4t in ButtonForStates) {
             b4t.obj.GetComponent<Button>().onClick.AddListener(delegate { nextState(b4t.state); });
         }
-        // find key
-        if (!PlayerPrefs.HasKey("state")) {
-            PlayerPrefs.SetString("state", "Menu");
-        }
+        // setting a played key in the PlayerPrefs class if not find
         if (!PlayerPrefs.HasKey("played")) {
             PlayerPrefs.SetInt("played", 0);
         }

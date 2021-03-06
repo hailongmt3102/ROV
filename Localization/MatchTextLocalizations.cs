@@ -6,7 +6,14 @@ public class MatchTextLocalizations : MonoBehaviour
     void Start()
     {
         foreach (TextToTranslation item in textToTranslations) {
-            item.textObject.text = Lean.Localization.LeanLocalization.GetTranslationText(item.Translation);
+            if (Lean.Localization.LeanLocalization.GetTranslation(item.Translation) == null)
+            {
+                Debug.LogError("can't find translation for " + item.textObject.transform.parent.name + " object");
+            }
+            else
+            {
+                item.textObject.text = Lean.Localization.LeanLocalization.GetTranslationText(item.Translation);
+            }
         }
     }
 }

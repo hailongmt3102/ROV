@@ -54,6 +54,7 @@ public class MapController : MonoBehaviour
     }
     private List<SaveLevelInfo> LoadData(int length, Texture2D[] levels) {
         string filePath = Application.persistentDataPath + gameObject.name + "LevelInfomations";
+        //File.Delete(filePath);
         if (File.Exists(filePath))
         {
             BinaryFormatter bf = new BinaryFormatter();
